@@ -8,7 +8,7 @@
 #########################################################################
 
 #RVCT 3.1 Root Directory
-DIR_ARM  =  C:\Progra~1\ARM\RVCT
+DIR_ARM  =  C:\RVCT_EAT
 
 #Binary fireware name
 BIN = app

@@ -982,7 +982,7 @@ static AtCmdRsp AtCmdCb_creg(u8* pRspStr)
             rspValue  = AT_RSP_STEP+2;
         }
         else if(2 == stat){                     /* searching */
-            if (count == 3){
+            if (count == 10){
                 eat_trace("at+creg? return AT_RSP_ERROR");
                 rspValue = AT_RSP_ERROR;
             }

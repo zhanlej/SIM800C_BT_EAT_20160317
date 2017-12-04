@@ -28,7 +28,7 @@ OUTPUT_LOG_DIR = output/log
 #SRC_OPEN_MODE_NAME = adc audio flash fs gpio inputmethod interrupt key pwm spi system timer uart main wmmp i2c sim other
 
 #Module name
-SRC_OPEN_MODE_NAME = spi
+SRC_OPEN_MODE_NAME = tcpip
 
 #Macro definition
 # FEA_APP_EXAMPLE_OPT = -DAPP_EXAMPLE

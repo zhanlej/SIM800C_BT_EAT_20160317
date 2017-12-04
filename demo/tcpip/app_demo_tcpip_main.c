@@ -35,6 +35,8 @@
  ********************************************************************/
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>  
+#include <stdarg.h> 
 #include "eat_modem.h"
 #include "eat_interface.h"
 #include "eat_uart.h"
@@ -149,6 +151,105 @@ void app_func_ext1(void *data)
 }
 
 
+my_putchar(const char cha)
+{
+    char temp[2];
+    temp[0] = cha;
+    eat_uart_write(EAT_UART_1, (char *)temp, 1);
+}
+void printch(const char ch)   //输出字符  
+{    
+    my_putchar(ch);    
+}    
+void printint(const int dec)     //输出整型数  
+{    
+    if(dec == 0)    
+    {    
+        return;    
+    }    
+    printint(dec / 10);    
+    my_putchar((char)(dec % 10 + '0'));    
+}    
+void printstr(const char *ptr)        //输出字符串  
+{    
+    while(*ptr)    
+    {    
+        my_putchar(*ptr);    
+        ptr++;    
+    }    
+}    
+void printfloat(const float flt)     //输出浮点数，小数点第5位四舍五入  
+{    
+    int tmpint = (int)flt;    
+    int tmpflt = (int)(100000 * (flt - tmpint));    
+    if(tmpflt % 10 >= 5)    
+    {    
+        tmpflt = tmpflt / 10 + 1;    
+    }    
+    else    
+    {    
+        tmpflt = tmpflt / 10;    
+    }    
+    printint(tmpint);    
+    my_putchar('.');    
+    printint(tmpflt);    
+  
+}    
+void my_printf(const char *format,...)    
+{    
+    va_list ap;    
+    va_start(ap,format);     //将ap指向第一个实际参数的地址  
+    while(*format)    
+    {    
+        if(*format != '%')    
+        {    
+            my_putchar(*format);    
+            format++;    
+        }    
+        else    
+        {    
+            format++;    
+            switch(*format)    
+            {    
+                case 'c':    
+                {    
+                    char valch = va_arg(ap,int);  //记录当前实践参数所在地址  
+                    printch(valch);    
+                    format++;    
+                    break;    
+                }    
+                case 'd':    
+                {    
+                    int valint = va_arg(ap,int);    
+                    printint(valint);    
+                    format++;    
+                    break;    
+                }    
+                case 's':    
+                {    
+                    char *valstr = va_arg(ap,char *);    
+                    printstr(valstr);    
+                    format++;    
+                    break;    
+                }    
+                case 'f':    
+                {    
+                    float valflt = va_arg(ap,double);    
+                    printfloat(valflt);    
+                    format++;    
+                    break;    
+                }    
+                default:    
+                {    
+                    printch(*format);    
+                    format++;    
+                }    
+            }      
+        }    
+    }  
+    va_end(ap);           
+    eat_uart_write(EAT_UART_1, "\r\n", 2);
+} 
 eat_bool eat_modem_data_parse(u8* buffer, u16 len, u8* param1, u8* param2)
 {
     eat_bool ret_val = EAT_FALSE;
@@ -158,7 +259,7 @@ eat_bool eat_modem_data_parse(u8* buffer, u16 len, u8* param1, u8* param2)
     if( buf_ptr != NULL)
     {
         sscanf((const char *)buf_ptr, "param:%d,extern_param:%d",(int*)param1, (int*)param2);
-        eat_trace("data parse param1:%d param2:%d",*param1, *param2);
+        my_printf("data parse param1:%d param2:%d",*param1, *param2);
         ret_val = EAT_TRUE;
     }
     return ret_val;
@@ -194,7 +295,7 @@ eat_soc_notify soc_notify_cb(s8 s,soc_event_enum event,eat_bool result, u16 ack_
         sockaddr_struct clientAddr={0};
         s8 newsocket = eat_soc_accept(s,&clientAddr);
         if (newsocket < 0){
-            eat_trace("eat_soc_accept return error :%d",newsocket);
+            my_printf("eat_soc_accept return error :%d",newsocket);
         }
         else{
             sprintf(buffer,"client accept:%s,%d:%d:%d:%d\r\n",clientAddr.addr[0],clientAddr.addr[1],clientAddr.addr[2],clientAddr.addr[3]);
@@ -203,11 +304,11 @@ eat_soc_notify soc_notify_cb(s8 s,soc_event_enum event,eat_bool result, u16 ack_
         val = TRUE;
         ret = eat_soc_setsockopt(socket_id, SOC_NODELAY, &val, sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt SOC_NODELAY return error :%d",ret);
+            my_printf("eat_soc_setsockopt SOC_NODELAY return error :%d",ret);
 
     }
 
-    eat_trace("soc_notify_cb");
+    my_printf("soc_notify_cb");
 
 }
 eat_bear_notify bear_notify_cb(cbm_bearer_state_enum state,u8 ip_addr[4])
@@ -235,56 +336,56 @@ eat_bear_notify bear_notify_cb(cbm_bearer_state_enum state,u8 ip_addr[4])
         eat_soc_notify_register(soc_notify_cb);
         socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
         if(socket_id < 0)
-            eat_trace("eat_soc_create return error :%d",socket_id);
+            my_printf("eat_soc_create return error :%d",socket_id);
 
         val = TRUE;
         ret = eat_soc_setsockopt(socket_id, SOC_NBIO, &val, sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 2 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 2 return error :%d",ret);
 
         val = (SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT|SOC_ACCEPT);
         ret = eat_soc_setsockopt(socket_id,SOC_ASYNC,&val,sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 1 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 1 return error :%d",ret);
         address.port = 111;
         eat_soc_bind(socket_id,&address);
         eat_soc_listen(socket_id,1);
 
         socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
         if(socket_id < 0)
-            eat_trace("eat_soc_create return error :%d",socket_id);
+            my_printf("eat_soc_create return error :%d",socket_id);
 
         val = TRUE;
         ret = eat_soc_setsockopt(socket_id, SOC_NBIO, &val, sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 2 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 2 return error :%d",ret);
 
         val = (SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT|SOC_ACCEPT);
         ret = eat_soc_setsockopt(socket_id,SOC_ASYNC,&val,sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 1 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 1 return error :%d",ret);
         address.port = 222;
         eat_soc_bind(socket_id,&address);
         eat_soc_listen(socket_id,1);
 
         socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
         if(socket_id < 0)
-            eat_trace("eat_soc_create return error :%d",socket_id);
+            my_printf("eat_soc_create return error :%d",socket_id);
 
         val = TRUE;
         ret = eat_soc_setsockopt(socket_id, SOC_NBIO, &val, sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 2 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 2 return error :%d",ret);
 
         val = (SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT|SOC_ACCEPT);
         ret = eat_soc_setsockopt(socket_id,SOC_ASYNC,&val,sizeof(val));
         if (ret != SOC_SUCCESS)
-            eat_trace("eat_soc_setsockopt 1 return error :%d",ret);
+            my_printf("eat_soc_setsockopt 1 return error :%d",ret);
         address.port = 333;
         eat_soc_bind(socket_id,&address);
         eat_soc_listen(socket_id,1);
     }
-    eat_trace("bear_notify_cb");
+    my_printf("bear_notify_cb");
 }
 
 eat_hostname_notify hostname_notify_cb(u32 request_id,eat_bool result,u8 ip_addr[4])
@@ -292,7 +393,7 @@ eat_hostname_notify hostname_notify_cb(u32 request_id,eat_bool result,u8 ip_addr
     u8 buffer[128] = {0};
     sprintf(buffer,"HOSTNAME_NOTIFY:%d,%d,%d:%d:%d:%d\r\n",request_id,result,ip_addr[0],ip_addr[1],ip_addr[2],ip_addr[3]);
     eat_uart_write(EAT_UART_1,buffer,strlen(buffer));
-    eat_trace("hostname_notify_cb");
+    my_printf("hostname_notify_cb");
     
 }
 
@@ -311,7 +412,7 @@ ResultNotifyCb ftpgettofs_final_cb(eat_bool result)
 
 	sprintf(buffer, "\r\nftpgettofs_cb final result = %d\r\n", result);
 	eat_uart_write(EAT_UART_1, buffer, strlen(buffer));
-    eat_trace("ftpgettofs_final_cb");
+    my_printf("ftpgettofs_final_cb");
 }
 
 ResultNotifyCb ftpgettofs_cb(eat_bool result)
@@ -320,7 +421,7 @@ ResultNotifyCb ftpgettofs_cb(eat_bool result)
 
 	sprintf(buffer, "\r\nftpgettofs_cb result = %d\r\n", result);
 	eat_uart_write(EAT_UART_1, buffer, strlen(buffer));
-    eat_trace("ftpgettofs_cb");
+    my_printf("ftpgettofs_cb");
 }
 
 eat_bool simcom_server_start()
@@ -353,18 +454,18 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
         {
             ret = eat_gprs_bearer_open("CMNET",NULL,NULL,bear_notify_cb);
             if(CBM_OK != ret)
-                eat_trace("gprs_bearer_open return error :%d",ret);
+                my_printf("gprs_bearer_open return error :%d",ret);
             ret = eat_gprs_bearer_hold() ;       /* hold bearer,after call this function, the bearer will be holding. 
                                                    in default, when last actived socket be closed, the bearer 
                                                    will be released */
             if(CBM_OK != ret)
-                eat_trace("eat_gprs_bearer_hold return error :%d",ret);
+                my_printf("eat_gprs_bearer_hold return error :%d",ret);
 
         }else if( 0 == param2)                  /* close gprs bearer */
         {
             ret = eat_gprs_bearer_release();
             if(CBM_OK != ret)
-                eat_trace("eat_gprs_bearer_release return error :%d",ret);
+                my_printf("eat_gprs_bearer_release return error :%d",ret);
             
         }
     }
@@ -384,44 +485,44 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
             eat_soc_notify_register(soc_notify_cb);
             socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
             if(socket_id < 0)
-                eat_trace("eat_soc_create return error :%d",socket_id);
+                my_printf("eat_soc_create return error :%d",socket_id);
             val = (SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT|SOC_ACCEPT);
             ret = eat_soc_setsockopt(socket_id,SOC_ASYNC,&val,sizeof(val));
             if (ret != SOC_SUCCESS)
-                eat_trace("eat_soc_setsockopt 1 return error :%d",ret);
+                my_printf("eat_soc_setsockopt 1 return error :%d",ret);
 
             val = TRUE;
             ret = eat_soc_setsockopt(socket_id, SOC_NBIO, &val, sizeof(val));
             if (ret != SOC_SUCCESS)
-                eat_trace("eat_soc_setsockopt 2 return error :%d",ret);
+                my_printf("eat_soc_setsockopt 2 return error :%d",ret);
 
             val = TRUE;
             ret = eat_soc_setsockopt(socket_id, SOC_NODELAY, &val, sizeof(val));
             if (ret != SOC_SUCCESS)
-                eat_trace("eat_soc_setsockopt 3 return error :%d",ret);
+                my_printf("eat_soc_setsockopt 3 return error :%d",ret);
 
             ret = eat_soc_getsockopt(socket_id, SOC_NODELAY, &VAL, sizeof(VAL));
             if (ret != SOC_SUCCESS)
-                eat_trace("eat_soc_getsockopt  return error :%d",ret);
+                my_printf("eat_soc_getsockopt  return error :%d",ret);
             else 
-                eat_trace("eat_soc_getsockopt return %d",val);
+                my_printf("eat_soc_getsockopt return %d",val);
 
             address.sock_type = SOC_SOCK_STREAM;
             address.addr_len = 4;
-            address.port = 5107;                /* TCP server port */
-            address.addr[0]=116;                /* TCP server ip address */
-            address.addr[1]=247;
-            address.addr[2]=119;
-            address.addr[3]=165;
+            address.port = 8883;                /* TCP server port */
+            address.addr[0]=222;                /* TCP server ip address */
+            address.addr[1]=29;
+            address.addr[2]=40;
+            address.addr[3]=68;
             ret = eat_soc_connect(socket_id,&address); 
             if(ret >= 0){
-                eat_trace("NEW Connection ID is :%d",ret);
+                my_printf("NEW Connection ID is :%d",ret);
             }
             else if (ret == SOC_WOULDBLOCK) {
-                eat_trace("Connection is in progressing");
+                my_printf("Connection is in progressing");
             }
             else {
-                eat_trace("Connect return error:%d",ret);
+                my_printf("Connect return error:%d",ret);
             }
 
 
@@ -430,7 +531,7 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
             s8 ret = 0;
             ret = eat_soc_close(socket_id);
             if(ret != SOC_SUCCESS){
-                eat_trace("Close error");
+                my_printf("Close error");
             }
         }
 
@@ -447,9 +548,9 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
             s32 ret = 0;
             ret = eat_soc_send(socket_id,"eat socket test",15);
             if (ret < 0)
-                eat_trace("eat_soc_send return error :%d",ret);
+                my_printf("eat_soc_send return error :%d",ret);
             else
-                eat_trace("eat_soc_send success :%d",ret);
+                my_printf("eat_soc_send success :%d",ret);
 
         }else if( 2 == param2 )                 /* receive data */
         {
@@ -457,15 +558,15 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
             s32 ret = 0;
             ret = eat_soc_recv(socket_id,buffer,1046);
             if(ret == SOC_WOULDBLOCK){
-                eat_trace("eat_soc_recv no data available");
+                my_printf("eat_soc_recv no data available");
 
             }
             else if(ret > 0) {
-                eat_trace("eat_soc_recv data:%s",buffer);
+                my_printf("eat_soc_recv data:%s",buffer);
                 eat_uart_write(EAT_UART_1,buffer,ret);
             }
             else{
-                eat_trace("eat_soc_recv return error:%d",ret);
+                my_printf("eat_soc_recv return error:%d",ret);
             }
             
         }
@@ -486,15 +587,15 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
             ret = eat_soc_gethostbyname("www.baidu.com",ipaddr,&len,1234);
             if (SOC_SUCCESS == ret){
                 u8 buffer[128] = {0};
-                eat_trace("eat_soc_gethostbyname success");
+                my_printf("eat_soc_gethostbyname success");
                 sprintf(buffer,"HOSTNAME:%d,%d:%d:%d:%d\r\n",ipaddr[0],ipaddr[1],ipaddr[2],ipaddr[3]);
                 eat_uart_write(EAT_UART_1,buffer,strlen(buffer));
 
             } else if(SOC_WOULDBLOCK == ret){
-                eat_trace("eat_soc_gethostbyname wait callback function");
+                my_printf("eat_soc_gethostbyname wait callback function");
 
             } else
-                eat_trace("eat_soc_gethostbyname error");
+                my_printf("eat_soc_gethostbyname error");
 
 
         }
@@ -512,7 +613,7 @@ static void uart_rx_proc(const EatEvent_st* event)
     if(len != 0)
     {
 		rx_buf[len] = '\0';
-		eat_trace("[%s] uart(%d) rx: %s", __FUNCTION__, uart, rx_buf);
+		my_printf("[%s] uart(%d) rx: %s", __FUNCTION__, uart, rx_buf);
 
 		if (uart == EAT_UART_1)
 		{
@@ -535,7 +636,7 @@ void app_main(void *data)
     APP_init_clib(); //C library initialize, second step
    if(eat_uart_open(EAT_UART_1 ) == EAT_FALSE)
     {
-	    eat_trace("[%s] uart(%d) open fail!", __FUNCTION__, EAT_UART_1);
+	    my_printf("[%s] uart(%d) open fail!", __FUNCTION__, EAT_UART_1);
     }
 	
     uart_config.baud = EAT_UART_BAUD_115200;
@@ -544,24 +645,25 @@ void app_main(void *data)
     uart_config.stopBits = EAT_UART_STOP_BITS_1;
     if(EAT_FALSE == eat_uart_set_config(EAT_UART_1, &uart_config))
     {
-        eat_trace("[%s] uart(%d) set config fail!", __FUNCTION__, EAT_UART_1);
+        my_printf("[%s] uart(%d) set config fail!", __FUNCTION__, EAT_UART_1);
     }
-    eat_trace(" app_main ENTRY");
+    my_printf(" app_main ENTRY");
+    my_printf("app_main ENTRY");
     ret = eat_mem_init(s_memPool,EAT_MEM_MAX_SIZE);
     if (!ret)
-        eat_trace("ERROR: eat memory initial error!");
+        my_printf("ERROR: eat memory initial error!");
     simcom_gsm_init("1234",GsmInitCallback);
     while(EAT_TRUE)
     {
         eat_get_event(&event);
-        eat_trace("MSG id%x", event.event);
+        my_printf("MSG id%x", event.event);
         switch(event.event)
         {
             case EAT_EVENT_TIMER :
                 {
                     //Restart timer
 //                    eat_timer_start(event.data.timer.timer_id, 3000);
-                    eat_trace("Timer test 1, timer ID:%d", event.data.timer.timer_id);
+                    my_printf("Timer test 1, timer ID:%d", event.data.timer.timer_id);
                 }
                 break;
             case EAT_EVENT_MDM_READY_RD:

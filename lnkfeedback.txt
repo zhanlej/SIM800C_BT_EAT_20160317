@@ -1,5 +1,21 @@
-;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Fri Dec 01 15:30:12 2017
+;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Tue Dec 05 14:21:59 2017
 ;VERSION 0.2
+;FILE MQTTConnectClient.o
+MQTTSerialize_disconnect <= USED 0
+MQTTSerialize_pingreq <= USED 0
+MQTTSerialize_zero <= USED 0
+;FILE MQTTDeserializePublish.o
+MQTTDeserialize_ack <= USED 0
+;FILE MQTTPacket.o
+MQTTPacket_equals <= USED 0
+MQTTPacket_readnb <= USED 0
+getLenStringLen <= USED 0
+;FILE MQTTSerializePublish.o
+MQTTSerialize_puback <= USED 0
+MQTTSerialize_pubcomp <= USED 0
+MQTTSerialize_pubrel <= USED 0
+MQTTSerialize_ack <= USED 0
+;FILE MQTTSubscribeClient.o
 ;FILE app_at_cmd_envelope.o
 simcom_urc_queue_append <= USED 0
 ;FILE main.o

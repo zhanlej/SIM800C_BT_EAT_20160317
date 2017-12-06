@@ -71,15 +71,6 @@ static u32 gpt_timer_counter = 0;
 static u32 time1 = 0;
 static u8 s_memPool[EAT_MEM_MAX_SIZE];
 
-u8 *SOC_EVENT[]={
-    "SOC_READ",
-    "SOC_WRITE",  
-    "SOC_ACCEPT", 
-    "SOC_CONNECT",
-    "SOC_CLOSE", 
-    "SOC_ACKED"
-};
-
 u8 *BEARER_STATE[]={
     "DEACTIVATED",
     "ACTIVATING",
@@ -172,48 +163,6 @@ void eat_gpt_cb_fun(void)
     gpt_timer_counter ++;
     //eat_reset_module();
 }
-eat_soc_notify soc_notify_cb(s8 s,soc_event_enum event,eat_bool result, u16 ack_size)
-{
-    u8 buffer[128] = {0};
-    u8 id = 0;
-    if(event&SOC_READ) {id = 0;
-        socket_id = s;
-    }
-    else if (event&SOC_WRITE) id = 1;
-    else if (event&SOC_ACCEPT) id = 2;
-    else if (event&SOC_CONNECT) id = 3;
-    else if (event&SOC_CLOSE){ id = 4;
-        eat_soc_close(s);
-    }
-    else if (event&SOC_ACKED) id = 5;
-    if (id == 5)
-        sprintf(buffer,"SOC_NOTIFY:%d,%s,%d\r\n",s,SOC_EVENT[id],ack_size);
-    else 
-        sprintf(buffer,"SOC_NOTIFY:%d,%s,%d\r\n",s,SOC_EVENT[id],result);
-    eat_uart_write(EAT_UART_1,buffer,strlen(buffer));
-
-    if(SOC_ACCEPT==event){
-        u8 val = 0;
-        s8 ret = 0;
-        sockaddr_struct clientAddr={0};
-        s8 newsocket = eat_soc_accept(s,&clientAddr);
-        if (newsocket < 0){
-            my_printf("eat_soc_accept return error :%d",newsocket);
-        }
-        else{
-            sprintf(buffer,"client accept:%s,%d:%d:%d:%d\r\n",clientAddr.addr[0],clientAddr.addr[1],clientAddr.addr[2],clientAddr.addr[3]);
-        }
-
-        val = TRUE;
-        ret = eat_soc_setsockopt(socket_id, SOC_NODELAY, &val, sizeof(val));
-        if (ret != SOC_SUCCESS)
-            my_printf("eat_soc_setsockopt SOC_NODELAY return error :%d",ret);
-
-    }
-
-    my_printf("soc_notify_cb");
-
-}
 eat_bear_notify bear_notify_cb(cbm_bearer_state_enum state,u8 ip_addr[4])
 {
     u8 buffer[128] = {0};
@@ -236,7 +185,7 @@ eat_bear_notify bear_notify_cb(cbm_bearer_state_enum state,u8 ip_addr[4])
         sockaddr_struct address={0};
         u8 val;
         s8 ret;
-        eat_soc_notify_register(soc_notify_cb);
+        // eat_soc_notify_register(soc_notify_cb);
         socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
         if(socket_id < 0)
             my_printf("eat_soc_create return error :%d",socket_id);
@@ -304,9 +253,17 @@ eat_hostname_notify hostname_notify_cb(u32 request_id,eat_bool result,u8 ip_addr
 ResultNotifyCb GsmInitCallback(eat_bool result)
 {
     if (result)
+    {
+        char msg[10] = "1234";
         eat_uart_write(EAT_UART_1,"GSM init OK\r\n",14);
+        transport_open(NULL, 8883);
+    }
     else
+    {
         eat_uart_write(EAT_UART_1,"GSM init ERROR\r\n",14);
+        my_printf("module_reset_test");
+        eat_reset_module();
+    }
 }
 
 ResultNotifyCb ftpgettofs_final_cb(eat_bool result)
@@ -380,62 +337,7 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
     {
         if( 1 == param2)                        /* connect server */
         {
-            //clear counter
-            u32 VAL;
-            u8 val = 0;
-            s8 ret = 0;
-            sockaddr_struct address={0};
-            eat_soc_notify_register(soc_notify_cb);
-            socket_id = eat_soc_create(SOC_SOCK_STREAM,0);
-            if(socket_id < 0)
-                my_printf("eat_soc_create return error :%d",socket_id);
-            val = (SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT|SOC_ACCEPT);
-            ret = eat_soc_setsockopt(socket_id,SOC_ASYNC,&val,sizeof(val));
-            if (ret != SOC_SUCCESS)
-                my_printf("eat_soc_setsockopt 1 return error :%d",ret);
-
-            val = TRUE;
-            ret = eat_soc_setsockopt(socket_id, SOC_NBIO, &val, sizeof(val));
-            if (ret != SOC_SUCCESS)
-                my_printf("eat_soc_setsockopt 2 return error :%d",ret);
-
-            val = TRUE;
-            ret = eat_soc_setsockopt(socket_id, SOC_NODELAY, &val, sizeof(val));
-            if (ret != SOC_SUCCESS)
-                my_printf("eat_soc_setsockopt 3 return error :%d",ret);
-
-            ret = eat_soc_getsockopt(socket_id, SOC_NODELAY, &VAL, sizeof(VAL));
-            if (ret != SOC_SUCCESS)
-                my_printf("eat_soc_getsockopt  return error :%d",ret);
-            else 
-                my_printf("eat_soc_getsockopt return %d",val);
-
-            address.sock_type = SOC_SOCK_STREAM;
-            address.addr_len = 4;
-            address.port = 8883;                /* TCP server port */
-#if 0
-            address.addr[0]=222;                /* TCP server ip address */
-            address.addr[1]=29;
-            address.addr[2]=40;
-            address.addr[3]=68;
-#else
-            address.addr[0]=47;                /* TCP server ip address */
-            address.addr[1]=92;
-            address.addr[2]=81;
-            address.addr[3]=9;
-#endif
-            ret = eat_soc_connect(socket_id,&address); 
-            if(ret >= 0){
-                my_printf("NEW Connection ID is :%d",ret);
-            }
-            else if (ret == SOC_WOULDBLOCK) {
-                my_printf("Connection is in progressing");
-            }
-            else {
-                my_printf("Connect return error:%d",ret);
-            }
-
-
+            transport_open(NULL, 8883);
         }else                                   /* close it */
         {
             s8 ret = 0;
@@ -556,6 +458,7 @@ void app_main(void *data)
     u16 len = 0;
     EatUartConfig_st uart_config;
     eat_bool ret;
+    eat_msg_t msg; //thread message
 
     APP_InitRegions();//Init app RAM
     APP_init_clib(); //C library initialize, second step
@@ -589,6 +492,19 @@ void app_main(void *data)
                     //Restart timer
 //                    eat_timer_start(event.data.timer.timer_id, 3000);
                     my_printf("Timer test 1, timer ID:%d", event.data.timer.timer_id);
+                    switch ( event.data.timer.timer_id ) 
+                    {
+                        case EAT_TIMER_3:   //判断mqtt_ack_flag是否清零，否则重启模块
+                            my_printf("mqtt_ack_flag = %d", mqtt_ack_flag);
+                            if(mqtt_ack_flag)
+                            {
+                                my_printf("mqtt_ack_flag error! reset module!");
+                                eat_reset_module();
+                                break;
+                            } 
+                        default:
+                            break;
+                    }
                 }
                 break;
             case EAT_EVENT_MDM_READY_RD:
@@ -620,6 +536,17 @@ void app_main(void *data)
                 break;
             case EAT_EVENT_UART_SEND_COMPLETE :
                 break;
+            case EAT_EVENT_USER_MSG: 
+                memcpy(&msg,event.data.user_msg.data, event.data.user_msg.len);
+                my_printf("msgID=%d msgMQTT=%d", msg.id, msg.mqtt_status);
+                if(msg.id == SOC_CONNECT || msg.id == SOC_WRITE)
+                {
+                    mqtt_send_handle(msg);
+                }
+                else if(msg.id == SOC_READ)
+                {
+                    mqtt_receive_handle(msg);
+                }
             default:
                 break;
         }

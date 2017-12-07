@@ -1,9 +1,7 @@
-;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Wed Dec 06 20:53:12 2017
+;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Thu Dec 07 16:34:39 2017
 ;VERSION 0.2
 ;FILE MQTTConnectClient.o
 MQTTSerialize_disconnect <= USED 0
-MQTTSerialize_pingreq <= USED 0
-MQTTSerialize_zero <= USED 0
 ;FILE MQTTDeserializePublish.o
 MQTTDeserialize_ack <= USED 0
 ;FILE MQTTPacket.o

@@ -25,10 +25,18 @@
 
 
 /* #####   EXPORTED TYPE DEFINITIONS   ############################################## */
+typedef enum
+{
+    OPEN = 1,           /* 发送开机信息 */
+    RETURN_PUB,     /* 返回接收到的数据 */
+    SENDDATA        /* 发送环境数据 */
+} mqtt_pub_tpye_enum;
+
 typedef struct _eat_msg_
 {
     int id;
     int mqtt_status;
+    mqtt_pub_tpye_enum mqtt_pub_tpye;
 }eat_msg_t;
 
 /* #####   EXPORTED DATA TYPES   #################################################### */
@@ -42,9 +50,7 @@ int transport_sendPacketBuffer(int sock, unsigned char* buf, int buflen);
 int transport_getdata(unsigned char* buf, int count);
 eat_bool mqtt_send_handle(eat_msg_t msg);
 eat_bool mqtt_receive_handle(eat_msg_t msg);
-
-void MQTT_Initial();
-void MQTT_Sub0Pub1();
+eat_bool mqtt_pingreq();
 
 
 

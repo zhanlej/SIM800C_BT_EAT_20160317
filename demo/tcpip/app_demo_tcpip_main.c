@@ -29,6 +29,14 @@
  *   4      2    Set rtc value
  *
  *--------------------------------------------------------------------
+ * 定时器使用情况
+ * EAT_TIMER_1: app_at_cmd_envelope 线程在使用，用来处理相关AT指令。
+ * EAT_TIMER_2: app_at_cmd_envelope 线程在使用，用来处理相关AT指令。
+ * EAT_TIMER_3: app_main 线程在使用，用来处理mqtt各消息对应ack的超时处理，判定超时重启模块。
+ * EAT_TIMER_4: app_main 线程在使用，用来发送mqtt的心跳包。
+ * param1 param2 
+ *
+ *--------------------------------------------------------------------
  ********************************************************************/
 /********************************************************************
  * Include Files
@@ -61,7 +69,7 @@ typedef void (*app_user_func)(void*);
 /********************************************************************
  * Extern Variables (Extern /Global)
  ********************************************************************/
-s8 socket_id = 0;
+extern s8 socket_id;
  
 /********************************************************************
  * Local Variables:  STATIC
@@ -384,8 +392,8 @@ eat_bool eat_module_test_tcpip(u8 param1, u8 param2)
         }
         else if(3 == param2)
         {
-            MQTT_Initial();
-            MQTT_Sub0Pub1();
+            // MQTT_Initial();
+            // MQTT_Sub0Pub1();
         }
         else if(4 == param2)
         {
@@ -491,7 +499,7 @@ void app_main(void *data)
                 {
                     //Restart timer
 //                    eat_timer_start(event.data.timer.timer_id, 3000);
-                    my_printf("Timer test 1, timer ID:%d", event.data.timer.timer_id);
+                    my_printf("Receive Timer, timer ID:%d", event.data.timer.timer_id);
                     switch ( event.data.timer.timer_id ) 
                     {
                         case EAT_TIMER_3:   //判断mqtt_ack_flag是否清零，否则重启模块
@@ -500,8 +508,11 @@ void app_main(void *data)
                             {
                                 my_printf("mqtt_ack_flag error! reset module!");
                                 eat_reset_module();
-                                break;
                             } 
+                            break;
+                        case EAT_TIMER_4:
+                            if(mqtt_pingreq() != EAT_TRUE) eat_reset_module();
+                            break;
                         default:
                             break;
                     }
@@ -538,7 +549,7 @@ void app_main(void *data)
                 break;
             case EAT_EVENT_USER_MSG: 
                 memcpy(&msg,event.data.user_msg.data, event.data.user_msg.len);
-                my_printf("msgID=%d msgMQTT=%d", msg.id, msg.mqtt_status);
+                my_printf("msgID=%d msgMQTT=%d msgPUB=%d", msg.id, msg.mqtt_status, msg.mqtt_pub_tpye);
                 if(msg.id == SOC_CONNECT || msg.id == SOC_WRITE)
                 {
                     mqtt_send_handle(msg);

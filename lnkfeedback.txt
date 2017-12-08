@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Thu Dec 07 16:34:39 2017
+;#<FEEDBACK># ARM Linker, RVCT3.1 [Build 569]: Last Updated: Thu Dec 07 17:31:13 2017
 ;VERSION 0.2
 ;FILE MQTTConnectClient.o
 MQTTSerialize_disconnect <= USED 0
@@ -16,10 +16,67 @@ MQTTSerialize_ack <= USED 0
 ;FILE MQTTSubscribeClient.o
 ;FILE app_at_cmd_envelope.o
 simcom_urc_queue_append <= USED 0
+;FILE cJSON.o
+cJSON_AddItemReferenceToArray <= USED 0
+cJSON_AddItemReferenceToObject <= USED 0
+cJSON_AddItemToObject <= USED 0
+cJSON_AddItemToObjectCS <= USED 0
+cJSON_CreateBool <= USED 0
+cJSON_CreateDoubleArray <= USED 0
+cJSON_CreateFalse <= USED 0
+cJSON_CreateFloatArray <= USED 0
+cJSON_CreateIntArray <= USED 0
+cJSON_CreateNull <= USED 0
+cJSON_CreateObject <= USED 0
+cJSON_CreateRaw <= USED 0
+cJSON_CreateString <= USED 0
+cJSON_CreateStringArray <= USED 0
+cJSON_CreateTrue <= USED 0
+cJSON_DeleteItemFromArray <= USED 0
+cJSON_DeleteItemFromObject <= USED 0
+cJSON_DeleteItemFromObjectCaseSensitive <= USED 0
+cJSON_DetachItemFromArray <= USED 0
+cJSON_DetachItemFromObject <= USED 0
+cJSON_DetachItemFromObjectCaseSensitive <= USED 0
+cJSON_Duplicate <= USED 0
+cJSON_GetArrayItem <= USED 0
+cJSON_GetArraySize <= USED 0
+cJSON_GetErrorPtr <= USED 0
+cJSON_GetObjectItemCaseSensitive <= USED 0
+cJSON_HasObjectItem <= USED 0
+cJSON_InitHooks <= USED 0
+cJSON_InsertItemInArray <= USED 0
+cJSON_IsArray <= USED 0
+cJSON_IsBool <= USED 0
+cJSON_IsFalse <= USED 0
+cJSON_IsInvalid <= USED 0
+cJSON_IsNull <= USED 0
+cJSON_IsObject <= USED 0
+cJSON_IsRaw <= USED 0
+cJSON_IsString <= USED 0
+cJSON_IsTrue <= USED 0
+cJSON_Minify <= USED 0
+cJSON_Print <= USED 0
+cJSON_PrintBuffered <= USED 0
+cJSON_PrintPreallocated <= USED 0
+cJSON_PrintUnformatted <= USED 0
+cJSON_ReplaceItemInArray <= USED 0
+cJSON_ReplaceItemInObject <= USED 0
+cJSON_ReplaceItemInObjectCaseSensitive <= USED 0
+cJSON_ReplaceItemViaPointer <= USED 0
+cJSON_SetNumberHelper <= USED 0
+cJSON_Version <= USED 0
+cJSON_free <= USED 0
+cJSON_malloc <= USED 0
+cJSON_DetachItemViaPointer <= USED 0
+cJSON_Compare <= USED 0
+cJSON_CreateNumber <= USED 0
+cJSON_CreateArray <= USED 0
+cJSON_AddItemToArray <= USED 0
 ;FILE main.o
-$Sub$$__user_initial_stackheap <= USED 0
 eat_gpt_cb_fun <= USED 0
 simcom_server_start <= USED 0
+$Sub$$__user_initial_stackheap <= USED 0
 ;FILE myprintf.o
 printch <= USED 0
 ;FILE transport.o

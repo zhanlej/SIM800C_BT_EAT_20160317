@@ -11,6 +11,7 @@
 #include "eat_socket.h"
 #include "transport.h"
 #include "MQTTPacket.h"  //MQTT
+#include "cJSON.h"
 
 
 
@@ -72,6 +73,7 @@ eat_bool publish_open();
 eat_bool mqtt_send_publish(mqtt_pub_tpye_enum pub_tpye);
 eat_bool mqtt_connack();
 eat_bool mqtt_suback();
+void payloadlen_in_handle(unsigned char* recv_data, int data_len);  //处理mqtt接收的数据
 eat_bool mqtt_receive_public();
 eat_bool mqtt_puback();
 eat_bool mqtt_pingresq();
@@ -237,7 +239,7 @@ int transport_getdata(unsigned char* buf, int count)
     else{
         my_printf("eat_soc_recv return error:%d",rc);
     }
-	//printf("received %d bytes count %d\n", rc, (int)count);
+	//my_printf("received %d bytes count %d\n", rc, (int)count);
 	return rc;
 }
 
@@ -250,6 +252,7 @@ void mqtt_ack_set(int ack_type)
 void mqtt_ack_clear(int ack_type)
 {
     mqtt_ack_flag &= ~(1<<ack_type);
+    if(mqtt_ack_flag == 0) eat_timer_stop(EAT_TIMER_3); //如果所有标志均是0则关闭定时器
 }
 
 eat_bool mqtt_pingreq()
@@ -443,6 +446,40 @@ eat_bool mqtt_suback()
     return EAT_TRUE;
 }
 
+void payloadlen_in_handle(unsigned char* recv_data, int data_len)
+{
+    cJSON *mqtt_recv_root = NULL;
+    int timeout_count;
+
+    my_printf("MQTT recive data: %s, data_len: %d\r\n", recv_data, data_len);
+
+    mqtt_recv_root = cJSON_Parse((const char *)recv_data);
+    if(mqtt_recv_root != NULL)
+    {
+        my_printf("mqtt_recv_root is ok!\r\n");
+
+        //处expiresAt据
+		if(cJSON_GetObjectItem(mqtt_recv_root, "expiresAt") != NULL)
+        {
+			my_printf("expiresAt is OK\r\n");
+			if(cJSON_IsNumber(cJSON_GetObjectItem(mqtt_recv_root, "expiresAt")))
+			{
+				my_printf("expiresAt is Number\r\n");
+				//用时间戳的数据格式
+				timeout_count = cJSON_GetObjectItem(mqtt_recv_root, "expiresAt")->valueint;
+				if(timeout_count > 1502883485 && timeout_count < 2147483647)
+				{
+					my_printf("expiresAt = %d\r\n", timeout_count);
+					// Flash_Write_Number(timeout_count, FLASH_SAVE_ADDR); //将超时时间写入stm32的flash中，写入地址必须比当前代码的大小要大
+					// Flash_Write_Number(0xaaaaaaaa, FLASH_SAVE_ADDR+4);
+				}
+				else my_printf("expiresAt number is Error\r\n");
+			}
+			else my_printf("expiresAt not Number\r\n");
+        }
+    }
+}
+
 eat_bool mqtt_receive_public()
 {
     int rc;
@@ -460,6 +497,8 @@ eat_bool mqtt_receive_public()
     //handle "payload_in" as data from the server
     my_printf("retained:%d, msgid:%d, receivedTopic:%s", retained, msgid, receivedTopic.cstring);
     my_printf("payloadlen_in:%d, payload_in:%s", payloadlen_in, payload_in);
+
+    payloadlen_in_handle(payload_in, payloadlen_in);
 
     return EAT_TRUE;
 }

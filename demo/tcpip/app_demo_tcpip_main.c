@@ -483,8 +483,7 @@ void app_main(void *data)
     {
         my_printf("[%s] uart(%d) set config fail!", __FUNCTION__, EAT_UART_1);
     }
-    my_printf(" app_main ENTRY");
-    my_printf("app_main ENTRY");
+    my_printf("app_main ENTRY v1.0");
     ret = eat_mem_init(s_memPool,EAT_MEM_MAX_SIZE);
     if (!ret)
         my_printf("ERROR: eat memory initial error!");

@@ -25,7 +25,10 @@ SOURCE:=$(S1)
 #MAIN_OBJ := main.o 
 
 #头文件目录设置
-LOCAL_INCLUDE := -I./
+LOCAL_INCLUDE := -I./ \
+				 -I mqtt \
+				 -I cjson \
+				 -I my_printf
 
 #编译，生成.a文件
 include $(PROJ_HOME)/build/app_build.mak
